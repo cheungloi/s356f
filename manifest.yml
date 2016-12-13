@@ -1,8 +1,0 @@
-applications:
-- path: .
-  memory: 256M
-  instances: 1
-  domain: au-syd.mybluemix.net
-  name: ouhks356floi
-  host: ouhks356floi
-  disk_quota: 1024M
