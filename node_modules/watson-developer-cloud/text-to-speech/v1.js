@@ -49,17 +49,15 @@ TextToSpeechV1.URL = 'https://stream.watsonplatform.net/text-to-speech/api';
  */
 TextToSpeechV1.prototype.synthesize = function(params, callback) {
   params = extend({accept:'audio/ogg; codecs=opus'}, params);
-  if (!params.text){
-    callback(new Error('Missing required parameters: text'));
-    return;
-  }
 
   var parameters = {
+    requiredParams: ['text'],
     options: {
       method: 'POST',
       url: '/v1/synthesize',
       body: JSON.stringify(pick(params, ['text'])),
       qs: pick(params, ['accept', 'voice', 'customization_id']),
+      path: pick(params, ['text']),
       headers: extend({
         'content-type': 'application/json'
       }, pick(params, ['X-Watson-Learning-Opt-Out'])),
@@ -142,18 +140,21 @@ TextToSpeechV1.prototype.pronunciation = function(params, callback) {
  *
  * Response looks like:
  *
+ * ```json
  * {
  *   "customization_id": "abc996ea-86ca-482e-b7ec-0f31c34e5ee9"
  * }
+ * ```
  *
  * @param {Object} params
  * @param {String} params.name
- * @param {String} [params.language=en-US] - Currently only en-US is supported
+ * @param {String} [params.language=en-US]
  * @param {String} [params.description]
  * @param {Function} callback
  */
 TextToSpeechV1.prototype.createCustomization = function(params, callback) {
   var parameters = {
+    requiredParams: ['name'],
     options: {
       method: 'POST',
       url: '/v1/customizations',
@@ -183,10 +184,12 @@ TextToSpeechV1.prototype.createCustomization = function(params, callback) {
  *
  * An example of params.words could be:
  *
+ * ```json
  *  [
  *    {"word":"NCAA", "translation":"N C double A"},
  *    {"word":"iPhone", "translation":"I phone"}
  *  ]
+ * ```
  *
  * @param {Object} params
  * @param {String} params.customization_id
@@ -197,12 +200,13 @@ TextToSpeechV1.prototype.createCustomization = function(params, callback) {
  */
 TextToSpeechV1.prototype.updateCustomization = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id', 'words'],
+    originalParams: params,
     options: {
-      requiredParams: ['customization_id', 'words'],
       method: 'POST',
       url: '/v1/customizations/' + params.customization_id,
       body: pick(params, ['name', 'description', 'words']),
-      json: true
+      json: true,
     },
     defaultOptions: this._options
   };
@@ -217,6 +221,7 @@ TextToSpeechV1.prototype.updateCustomization = function(params, callback) {
  *
  * Example response:
  *
+ * ```json
 {
   "customizations": [
     {
@@ -238,11 +243,11 @@ TextToSpeechV1.prototype.updateCustomization = function(params, callback) {
       "last_modified": 1461173033323
     }
   ]
-}
+}```
  *
  *
  * @param {Object} [params]
- * @param {String} [params.language] optional filter. Currently only en-US is supported.
+ * @param {String} [params.language] optional filter.
  * @param {Function} callback
  */
 TextToSpeechV1.prototype.getCustomizations = function(params, callback) {
@@ -270,7 +275,7 @@ TextToSpeechV1.prototype.getCustomizations = function(params, callback) {
  * Only the owner of a custom voice model can use this method to query information about the model.
  *
  * Example response:
- *
+ * ```json
  {
    "words": [
      {
@@ -289,7 +294,7 @@ TextToSpeechV1.prototype.getCustomizations = function(params, callback) {
    "customization_id": "53506a62-6861-41f5-9a44-352047edcf6f",
    "name": "First cURL Test Update",
    "description": "First customization test via cURL update"
- }
+ }```
  *
  *
  * @param {Object} params
@@ -298,9 +303,10 @@ TextToSpeechV1.prototype.getCustomizations = function(params, callback) {
  */
 TextToSpeechV1.prototype.getCustomization = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id'],
+    originalParams: params,
     options: {
       method: 'GET',
-      requiredParams: ['customization_id'],
       url: '/v1/customizations/' + params.customization_id,
       json: true
     },
@@ -318,9 +324,10 @@ TextToSpeechV1.prototype.getCustomization = function(params, callback) {
  */
 TextToSpeechV1.prototype.deleteCustomization = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id'],
+    originalParams: params,
     options: {
       method: 'DELETE',
-      requiredParams: ['customization_id'],
       url: '/v1/customizations/' + params.customization_id,
       json: true
     },
@@ -337,10 +344,12 @@ TextToSpeechV1.prototype.deleteCustomization = function(params, callback) {
  *
  * An example of params.words could be:
  *
+ * ```json
  *  [
  *    {"word":"NCAA", "translation":"N C double A"},
  *    {"word":"iPhone", "translation":"I phone"}
  *  ]
+ * ```
  *
  * @param {Object} params
  * @param {String} params.customization_id
@@ -349,8 +358,9 @@ TextToSpeechV1.prototype.deleteCustomization = function(params, callback) {
  */
 TextToSpeechV1.prototype.addWords = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id', 'words'],
+    originalParams: params,
     options: {
-      requiredParams: ['customization_id', 'words'],
       method: 'POST',
       url: '/v1/customizations/' + params.customization_id + '/words',
       body: pick(params, ['words']),
@@ -369,6 +379,7 @@ TextToSpeechV1.prototype.addWords = function(params, callback) {
  *
  * An example call could be
  *
+ * ```json
  *  myTextToSpeech.addWord({
  *      customization_id: '<model-id>',
  *      word: 'ACLs',
@@ -377,6 +388,7 @@ TextToSpeechV1.prototype.addWords = function(params, callback) {
  *    function(err, res) {
  *      console.log(err, res);
  *   });
+ * ```
  *
  * @param {Object} params
  * @param {String} params.customization_id
@@ -386,8 +398,9 @@ TextToSpeechV1.prototype.addWords = function(params, callback) {
  */
 TextToSpeechV1.prototype.addWord = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id', 'word', 'translation'],
+    originalParams: params,
     options: {
-      requiredParams: ['customization_id', 'word', 'translation'],
       method: 'PUT',
       url: '/v1/customizations/' + params.customization_id + '/words/' + params.word,
       body: pick(params, ['translation']),
@@ -406,6 +419,7 @@ TextToSpeechV1.prototype.addWord = function(params, callback) {
  *
  * Example response:
  *
+ * ```json
  {
     "words": [
        {
@@ -430,7 +444,7 @@ TextToSpeechV1.prototype.addWord = function(params, callback) {
        }
     ]
  }
- *
+ *  ```
  *
  * @param {Object} params
  * @param {String} params.customization_id
@@ -442,11 +456,11 @@ TextToSpeechV1.prototype.getWords = function(params, callback) {
     params = {};
   }
   var parameters = {
+    requiredParams: ['customization_id'],
+    originalParams: params,
     options: {
       method: 'GET',
-      requiredParams: ['customization_id'],
       url: '/v1/customizations/' + params.customization_id + '/words',
-      qs: pick(params, ['language']),
       json: true
     },
     defaultOptions: this._options
@@ -459,9 +473,11 @@ TextToSpeechV1.prototype.getWords = function(params, callback) {
  *
  * Example output:
  *
+ * ```json
 {
   "translation": "ackles"
 }
+ * ```
  *
  * @param {Object} params
  * @param {String} params.customization_id
@@ -470,8 +486,9 @@ TextToSpeechV1.prototype.getWords = function(params, callback) {
  */
 TextToSpeechV1.prototype.getWord = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id', 'word'],
+    originalParams: params,
     options: {
-      requiredParams: ['customization_id', 'word'],
       method: 'GET',
       url: '/v1/customizations/' + params.customization_id + '/words/' + params.word,
       json: true
@@ -491,8 +508,9 @@ TextToSpeechV1.prototype.getWord = function(params, callback) {
  */
 TextToSpeechV1.prototype.deleteWord = function(params, callback) {
   var parameters = {
+    requiredParams: ['customization_id', 'word'],
+    originalParams: params,
     options: {
-      requiredParams: ['customization_id', 'word'],
       method: 'DELETE',
       url: '/v1/customizations/' + params.customization_id + '/words/' + params.word,
       json: true

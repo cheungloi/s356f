@@ -48,11 +48,11 @@ app.post('/api/login', function(req,res){
       assert.equal(null,err);
       login(db, criteria, req.body.pw, function(result){
       	db.close();
-      	console.log(result);
       if (result) {
             res.status(200);
             req.session.authenticated = true;
-			req.session.username = req.body.userid;
+			req.session.username = result._id;
+			console.log(req.session.username);
 			res.send(result);
 			res.end();
         } else {
@@ -67,9 +67,10 @@ app.post('/api/login', function(req,res){
 
 app.post('/api/createac', function(req,res){
 	var reresult = {};
-	if(!req.body.userid || !req.body.pw){
+	console.log(req.body);
+	if(req.body.userid == null || req.body.pw == null){
 		reresult['status'] = 'userid or pw empty';
-		res.status(500);
+		res.status(401);
 		res.send(reresult);
 		res.end();
 		return;
@@ -86,7 +87,7 @@ app.post('/api/createac', function(req,res){
 			res.send(reresult);
 			res.end();
         } else {
-          	res.status(500);
+          	res.status(402);
             reresult['status'] = 'userid or email is used';
 			res.send(reresult);
 			res.end();
@@ -96,18 +97,28 @@ app.post('/api/createac', function(req,res){
 });
 app.post('/api/updateac',function(req,res){
 	var reresult = {};
-	var criteria1 = {"_id":ObjectId(req.body.id)};
-	var criteria2 = {$set:req.body};
+	var criteria1 = {"_id":ObjectId(req.body._id)};
+	var criteria2 = {};
+	criteria2['pw'] = req.body.pw;
+	criteria2['phone'] = req.body.phone;
+	criteria2['balance'] = req.body.balance;
+	if(req.body.irondata){
+		criteria2['irondata'] = req.body.irondata;
+	}
+	var criteria3 = {$set:criteria2};
 	MongoClient.connect(mongourl,function(err,db) {
       console.log('Connected to mlab.com');
       assert.equal(null,err);
-      updateac(db, criteria1, criteria2, function(result){
+      updateac(db, criteria1, criteria3, function(result){
     		db.close();
-    		//res.redirect('/showinfo?id='+req.body.id);
+    		res.status(200);
+    		reresult['status'] = result;
+    		res.send(reresult);
     		res.end();
     	});
 	});
 });
+
 app.post('/api/addproduct', function(req,res){
 	var reresult = {};
 	console.log(req.body);
@@ -131,9 +142,46 @@ app.post('/api/addproduct', function(req,res){
       });
     });
 });
+
+app.post('/api/updateproduct', function(req,res){
+	var reresult = {};
+	console.log(req.body);
+	var criteria1 = {"_id":ObjectId(req.body._id)};
+	var criteria2 = {};
+	criteria2['pname'] = req.body.pname;
+	criteria2['ptype'] = req.body.ptype;
+	criteria2['brand'] = req.body.brand;
+	criteria2['size'] = req.body.size;
+	criteria2['price'] = req.body.price;
+	if(req.body.photo1){
+		criteria2['photo1data'] = req.body.photo1data;
+	}
+	if(req.body.photo2){
+		criteria2['photo2data'] = req.body.photo2data;
+	}
+	if(req.body.photo3){
+		criteria2['photo3data'] = req.body.photo3data;
+	}
+	criteria2['owner'] = req.body.owner;
+	criteria2['state'] = req.body.state;
+	var criteria3 = {$set:criteria2};
+	MongoClient.connect(mongourl,function(err,db) {
+      console.log('Connected to mlab.com');
+      assert.equal(null,err);
+      updateproduct(db, criteria1, criteria3, function(result){
+    		db.close();
+    		res.status(200);
+    		reresult['status'] = result;
+    		res.send(reresult);
+    		res.end();
+    	});
+	});
+});
+
 app.get('/api/logout',function(req,res) {
 	var reresult = {};
 	req.session = null;
+	res.status(200);
 	reresult['status'] = 'logout success';
 	res.send(reresult);
 });
@@ -191,6 +239,7 @@ function updateac(db, criteria1, criteria2, callback){
       			console.log("updateOne error: " + JSON.stringify(err));
     		} else {
       			console.log("update success");
+      			result = "update success";
     		}
 
     		callback(result);
