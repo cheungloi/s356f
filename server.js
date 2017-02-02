@@ -24,7 +24,8 @@ app.use(session({
   keys: [SECRETKEY1,SECRETKEY2]
 }));
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(express.static(__dirname + '/public'));
 app.use(fileUpload());
 app.use('/style', express.static('style'));
@@ -102,6 +103,7 @@ app.post('/api/updateac',function(req,res){
 	criteria2['pw'] = req.body.pw;
 	criteria2['phone'] = req.body.phone;
 	criteria2['balance'] = req.body.balance;
+	criteria2['scode'] = req.body.scode;
 	if(req.body.irondata){
 		criteria2['irondata'] = req.body.irondata;
 	}
@@ -111,10 +113,17 @@ app.post('/api/updateac',function(req,res){
       assert.equal(null,err);
       updateac(db, criteria1, criteria3, function(result){
     		db.close();
+    		if(result==true){
     		res.status(200);
-    		reresult['status'] = result;
+    		reresult['status'] = "update success";
     		res.send(reresult);
     		res.end();
+    	}else{
+    		res.status(400);
+    		reresult['status'] = result
+    		res.send(reresult);
+    		res.end();
+    	}
     	});
 	});
 });
@@ -170,10 +179,17 @@ app.post('/api/updateproduct', function(req,res){
       assert.equal(null,err);
       updateproduct(db, criteria1, criteria3, function(result){
     		db.close();
-    		res.status(200);
-    		reresult['status'] = result;
-    		res.send(reresult);
-    		res.end();
+    		if(result == true){
+    			res.status(200);
+    			reresult['status'] = "update success";
+    			res.send(reresult);
+    			res.end();
+    		}else{
+    			res.status(404);
+    			reresult['status'] = true;
+    			res.send(reresult);
+    			res.end();
+    		}
     	});
 	});
 });
@@ -239,11 +255,26 @@ function updateac(db, criteria1, criteria2, callback){
       			console.log("updateOne error: " + JSON.stringify(err));
     		} else {
       			console.log("update success");
-      			result = "update success";
+      			result = true;
     		}
 
     		callback(result);
 	});
+}
+function updateproduct(db, criteria1, criteria2, callback){
+	console.log(criteria1);
+	console.log(criteria2);
+	db.collection('product').updateOne(criteria1,criteria2,function(err,result){
+		if (err) {
+      			result = err;
+      			console.log("updateOne error: " + JSON.stringify(err));
+    		} else {
+      			console.log("update success");
+      			result = true;
+    		}
+
+    		callback(result);
+	});	
 }
 function listproduct(db, criteria, callback){
 	if (!criteria){
