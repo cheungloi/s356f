@@ -36,6 +36,7 @@ app.post('/api', function(req,res){
 
 app.post('/api/login', function(req,res){
 	var reresult = {};
+	console.log("login"+JSON.stringify(req.body));
 	if(!req.body.userid || !req.body.pw){
 		reresult['status'] = 'userid or pw empty';
 		res.status(500);
@@ -45,10 +46,11 @@ app.post('/api/login', function(req,res){
 	}
 	var criteria = {"userid":req.body.userid};
 	MongoClient.connect(mongourl,function(err,db) {
-      console.log('Connected to mlab.com');
+      console.log('connecting to user');
       assert.equal(null,err);
       login(db, criteria, req.body.pw, function(result){
       	db.close();
+      	console.log("login result"+JSON.stringify(result));
       if (result) {
             res.status(200);
             req.session.authenticated = true;
@@ -68,7 +70,7 @@ app.post('/api/login', function(req,res){
 
 app.post('/api/createac', function(req,res){
 	var reresult = {};
-	console.log(req.body);
+	console.log("createac"+JSON.stringify(req.body));
 	if(req.body.userid == null || req.body.pw == null){
 		reresult['status'] = 'userid or pw empty';
 		res.status(401);
@@ -77,11 +79,11 @@ app.post('/api/createac', function(req,res){
 		return;
 	}
 	MongoClient.connect(mongourl,function(err,db) {
-      console.log('Connected to mlab.com');
+      console.log('connecting to user');
       assert.equal(null,err);
       createac(db, req.body.userid, req.body.pw, req.body.email, req.body, function(result){
       	db.close();
-      	console.log(result);
+      	console.log("createac result"+JSON.stringify(result));
       if (result) {
             res.status(200);
             reresult['status'] = 'createac success';
@@ -98,6 +100,12 @@ app.post('/api/createac', function(req,res){
 });
 app.post('/api/updateac',function(req,res){
 	var reresult = {};
+	console.log("updateac"+JSON.stringify(req.body));
+	if(req.body._id == null){
+		res.status(404);
+		res.end("no product id");
+		return;
+	}
 	var criteria1 = {"_id":ObjectId(req.body._id)};
 	var criteria2 = {};
 	criteria2['pw'] = req.body.pw;
@@ -109,9 +117,10 @@ app.post('/api/updateac',function(req,res){
 	}
 	var criteria3 = {$set:criteria2};
 	MongoClient.connect(mongourl,function(err,db) {
-      console.log('Connected to mlab.com');
+      console.log('connecting to user');
       assert.equal(null,err);
       updateac(db, criteria1, criteria3, function(result){
+      	console.log("updateac result"+JSON.stringify(result));
     		db.close();
     		if(result==true){
     		res.status(200);
@@ -120,7 +129,7 @@ app.post('/api/updateac',function(req,res){
     		res.end();
     	}else{
     		res.status(400);
-    		reresult['status'] = result
+    		reresult['status'] = "update fail";
     		res.send(reresult);
     		res.end();
     	}
@@ -130,20 +139,20 @@ app.post('/api/updateac',function(req,res){
 
 app.post('/api/addproduct', function(req,res){
 	var reresult = {};
-	console.log(req.body);
+	console.log("addproduct"+JSON.stringify(req.body));
 	MongoClient.connect(mongourl,function(err,db) {
-      console.log('Connected to mlab.com');
+      console.log('connecting to product');
       assert.equal(null,err);
       addproduct(db, req.body, function(result){
       	db.close();
-      	console.log(result);
-      if (result) {
+      	console.log("addproduct result"+JSON.stringify(result));
+      if (result==true) {
             res.status(200);
             reresult['status'] = 'add success';
 			res.send(reresult);
 			res.end();
         } else {
-          	res.status(500);
+          	res.status(400);
             reresult['status'] = 'add fail';
 			res.send(reresult);
 			res.end();
@@ -154,7 +163,7 @@ app.post('/api/addproduct', function(req,res){
 
 app.post('/api/updateproduct', function(req,res){
 	var reresult = {};
-	console.log(req.body);
+	console.log("updateproduct"+JSON.stringify(req.body));
 	var criteria1 = {"_id":ObjectId(req.body._id)};
 	var criteria2 = {};
 	criteria2['pname'] = req.body.pname;
@@ -175,23 +184,48 @@ app.post('/api/updateproduct', function(req,res){
 	criteria2['state'] = req.body.state;
 	var criteria3 = {$set:criteria2};
 	MongoClient.connect(mongourl,function(err,db) {
-      console.log('Connected to mlab.com');
+      console.log('connecting to product');
       assert.equal(null,err);
       updateproduct(db, criteria1, criteria3, function(result){
     		db.close();
-    		if(result == true){
+    		console.log("updateproduct result"+JSON.stringify(result));
+    		if(result==true){
     			res.status(200);
     			reresult['status'] = "update success";
     			res.send(reresult);
     			res.end();
     		}else{
-    			res.status(404);
-    			reresult['status'] = true;
+    			res.status(400);
+    			reresult['status'] = "update fail";
     			res.send(reresult);
     			res.end();
     		}
     	});
 	});
+});
+
+app.post('/api/delproduct', function(req,res){
+	console.log("delproduct"+JSON.stringify(req.body));
+	var criteria = {"_id":ObjectId(req.body._id)};
+	MongoClient.connect(mongourl,function(err,db) {
+      console.log('connecting to product');
+      assert.equal(null,err);
+      updateproduct(db, criteria, function(result){
+    		db.close();
+    		console.log("delproduct"+JSON.stringify(result));
+    		if(result==true){
+    			res.status(200);
+    			reresult['status'] = "del success";
+    			res.send(reresult);
+    			res.end();
+    		}else{
+    			res.status(400);
+    			reresult['status'] = "del fail";
+    			res.send(reresult);
+    			res.end();    		
+    		}
+		});
+    });
 });
 
 app.get('/api/logout',function(req,res) {
@@ -276,6 +310,16 @@ function updateproduct(db, criteria1, criteria2, callback){
     		callback(result);
 	});	
 }
+function delproduct(db, criteria, callback){
+	db.collection('product').remove(criteria,function(err,result) {
+	if(err){
+		result = err;
+	}else{
+		result = true
+	}
+	callback(result);
+	});
+}
 function listproduct(db, criteria, callback){
 	if (!criteria){
 		db.collection('product').find().toArray(function(err, result){
@@ -294,11 +338,12 @@ function addproduct(db, body, callback){
 	db.collection('product').insertOne(body,function(err,result){
 	if (err) {
       	console.log('insertOne Error: ' + JSON.stringify(err));
-      	callback(false);
+      	result = err;
     } else {
       	console.log("Inserted _id = " + result.insertId);
+      	result = true;
     }
-    	callback(true);
+    	callback(result);
 	});
 }
 function createac(db, userid, pw, email, body, callback){
