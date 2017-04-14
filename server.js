@@ -41,6 +41,11 @@ app.get('/api/checksession', function(req,res){
 	}
 });
 
+app.get('/', function(req,res){
+
+	res.status(200).end("s356fproject");
+});
+
 app.post('/api/login', function(req,res){
 	var reresult = {};
 	console.log("login: "+JSON.stringify(req.body));
@@ -145,6 +150,54 @@ app.post('/api/updateac',function(req,res){
     	});
 	});
 });
+app.post('/api/addwishlist', function(req,res){
+	var reresult = {};
+	console.log("addwishlist: "+JSON.stringify(req.body));
+	MongoClient.connect(mongourl,function(err,db) {
+      console.log('connecting to wishlist');
+      assert.equal(null,err);
+      addwishlist(db, req.body, function(result){
+      	db.close();
+      	console.log("addwishlist result: "+JSON.stringify(result));
+      if (result==true) {
+            res.status(200);
+            reresult['status'] = 'add success';
+			res.send(reresult);
+			res.end();
+        } else {
+          	res.status(400);
+            reresult['status'] = 'add fail';
+			res.send(reresult);
+			res.end();
+        }
+      });
+    });
+});
+
+app.post('/api/delwishlist', function(req,res){
+	console.log("delwishlist: "+JSON.stringify(req.body));
+	var criteria = {"_id":ObjectId(req.body._id)};
+	MongoClient.connect(mongourl,function(err,db) {
+      console.log('connecting to wishlist');
+      assert.equal(null,err);
+      updateproduct(db, criteria, function(result){
+    		db.close();
+    		console.log("delwishlist: "+JSON.stringify(result));
+    		if(result==true){
+    			res.status(200);
+    			reresult['status'] = "del success";
+    			res.send(reresult);
+    			res.end();
+    		}else{
+    			res.status(400);
+    			reresult['status'] = "del fail";
+    			res.send(reresult);
+    			res.end();    		
+    		}
+		});
+    });
+});
+
 
 app.post('/api/addproduct', function(req,res){
 	var reresult = {};
@@ -247,16 +300,21 @@ app.post('/api/updateoffer', function(req,res){
 	console.log("updateoffer: "+JSON.stringify(req.body));
 	var criteria1 = {"_id":ObjectId(req.body._id)};
 	var criteria2 = {};
+	criteria2['BuyerName'] = req.body.BuyerName;
 	criteria2['DateTime'] = req.body.DateTime;
 	criteria2['place'] = req.body.place;
 	criteria2['stat'] = req.body.stat;
 	criteria2['OwnerCode'] = req.body.OwnerCode;
-	criteria2['BuyberCode'] = req.body.BuyberCode;
+	criteria2['BuyerCode'] = req.body.BuyerCode;
+	criteria2['title'] = req.body.title;
+	criteria2['photo'] = req.body.photo;
 	var criteria3 = {$set:criteria2};
+	var ownerid = {"OwnerID":ObjectId(req.body.OwnerID)};
+	var buyerid = {"BuyerID":ObjectId(req.body.BuyerID)};
 	MongoClient.connect(mongourl,function(err,db) {
       console.log('connecting to offer');
       assert.equal(null,err);
-      updateoffer(db, criteria1, criteria3, req.body.OwnerCode, req.body.BuyberCode, function(result){
+      updateoffer(db, criteria1, criteria3, ownerid, buyerid, function(result){
     		db.close();
     		console.log("updateoffer result: "+JSON.stringify(result));
     		if(result==true){
@@ -299,6 +357,92 @@ app.post('/api/delproduct', function(req,res){
     });
 });
 
+app.get('/api/listwishlist', function(req,res){
+	var criteria = {};
+	console.log(criteria);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to wishlist');
+		listwishlist(db, criteria, function(wishlist){
+			if(ac != null){
+			db.close();
+			res.send(wishlist);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
+		});
+	});
+});
+app.get('/api/listwishlist/:criteria1/:criteria2', function(req,res){
+	var criteria = {};
+	if(req.params.criteria1 == "_id"){
+		criteria["_id"] = ObjectId(req.params.criteria2);
+	}else{
+	criteria[req.params.criteria1] = req.params.criteria2;
+	}
+	console.log(criteria);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to wishlist');
+		listwishlist(db, criteria, function(wishlist){
+			if(wishlist != null){
+			db.close();
+			res.send(wishlist);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
+		});
+	});
+});
+
+
+app.get('/api/listac', function(req,res){
+	var criteria = {};
+	console.log(criteria);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to user');
+		listac(db, criteria, function(ac){
+			if(ac != null){
+			db.close();
+			res.send(ac);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
+		});
+	});
+});
+
+app.get('/api/listac/:criteria1/:criteria2', function(req,res){
+	var criteria = {};
+	if(req.params.criteria1 == "_id"){
+		criteria["_id"] = ObjectId(req.params.criteria2);
+	}else{
+	criteria[req.params.criteria1] = req.params.criteria2;
+	}
+	console.log(criteria);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to user');
+		listac(db, criteria, function(ac){
+			if(ac != null){
+			db.close();
+			res.send(ac);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
+		});
+	});
+});
+
 
 app.get('/api/logout',function(req,res) {
 	var reresult = {};
@@ -321,9 +465,13 @@ app.get('/api/list', function(req,res){
 });
 app.get('/api/list/:criteria1/:criteria2', function(req,res){
 	var criteria = {};
+	if(req.params.criteria1 == "_id"){
+		criteria["_id"] = ObjectId(req.params.criteria2);
+	}else{
 	criteria[req.params.criteria1] = req.params.criteria2;
+	}
 	console.log(criteria);
-	MongoClient.connect(mongourl, criteria, function(err, db){
+	MongoClient.connect(mongourl, function(err, db){
 		assert.equal(err, null);
 		console.log('connecting to product');
 		listproduct(db, criteria, function(product){
@@ -344,10 +492,53 @@ app.get('/api/listoffer', function(req,res){
 		assert.equal(err, null);
 		console.log('connecting to offer');
 		var criteria = null;
-		listproduct(db, criteria, function(offer){
+		listoffer(db, criteria, function(offer){
 			db.close();
 			res.send(offer);
 			res.end();
+		});
+	});
+});
+app.get('/api/listoffer/:criteria1/:criteria2/', function(req,res){
+	var criteria = {};
+	if(req.params.criteria1 == "offerid"){
+		criteria["_id"] = ObjectId(req.params.criteria2);
+	}else{
+		criteria[req.params.criteria1] = req.params.criteria2;
+	}
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to offer');
+		listoffer(db, criteria, function(offer){
+			if(offer != null){
+			db.close();
+			res.send(offer);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
+		});
+	});
+});
+app.get('/api/listoffer/:criteria1/:criteria2/:criteria3/:criteria4', function(req,res){
+	var criteria = {};
+	//var criteria2 = {};
+	criteria[req.params.criteria1] = req.params.criteria2;
+	criteria[req.params.criteria3] = req.params.criteria4;
+	//console.log(criteria);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(err, null);
+		console.log('connecting to offer');
+		listoffer(db, criteria, function(offer){
+			if(offer != null){
+			db.close();
+			res.send(offer);
+			res.end();
+			}else{
+			res.send({});
+			res.end();
+		}
 		});
 	});
 });
@@ -395,25 +586,29 @@ function updateproduct(db, criteria1, criteria2, callback){
     		callback(result);
 	});	
 }
-function updateoffer(db, criteria1, criteria2, owner, buyer, callback){
-	db.collection('user').findOne(criteria1,{'OwnerCode':owner},{'BuyberCode':buyer},function(err,result){
+function updateoffer(db, criteria1, criteria3, ownerid, buyerid, callback){
+		console.log(criteria1);
+		console.log(ownerid);
+		console.log(buyerid);
+		db.collection('offer').findOne(criteria1,ownerid,buyerid,function(err,result){
 		assert.equal(err,null);
-		if(doc==null){
-			callback(false);
-		}else{
-			db.collection('offer').updateOne(criteria1,criteria2,function(err,result){
+		if(result!=null){
+			db.collection('offer').updateOne(criteria1,criteria3,function(err,result){
 				if (err) {
-      			result = err;
-      			console.log("updateOne error: " + JSON.stringify(err));
-    		} else {
-      			console.log("update success");
-      			result = true;
-    		}
-    		callback(result);
+      				result = err;
+      				console.log("updateOne error: " + JSON.stringify(err));
+    			} else {
+      				console.log("update success");
+      				result = true;
+    			}
+    			callback(result);
 			});	
-		}
-	});
-}
+		}else{
+			console.log("no this offer");
+			callback(false);
+			}	
+		});
+	}
 function delproduct(db, criteria, callback){
 	db.collection('product').remove(criteria,function(err,result) {
 	if(err){
@@ -438,14 +633,43 @@ function listproduct(db, criteria, callback){
 	});
 	}
 }
+function listwishlist(db, criteria, callback){
+	if (!criteria){
+		db.collection('wishlist').find().toArray(function(err, result){
+			assert.equal(err,null);
+			callback(result);
+	});
+	}else{
+		console.log(criteria)
+		db.collection('wishlist').find(criteria).toArray(function(err, result){
+			assert.equal(err,null);
+			callback(result);
+	});
+	}
+}
+
+function listac(db, criteria, callback){
+	if (!criteria){
+		db.collection('user').find().toArray(function(err, result){
+			assert.equal(err,null);
+			callback(result);
+	});
+	}else{
+		console.log(criteria)
+		db.collection('user').find(criteria).toArray(function(err, result){
+			assert.equal(err,null);
+			callback(result);
+	});
+	}
+}
 function listoffer(db, criteria, callback){
 	if (!criteria){
 		db.collection('offer').find().toArray(function(err, result){
 			assert.equal(err,null);
 			callback(result);
 	});
-	}else{
-		console.log(criteria)
+	}else {
+		console.log(criteria);
 		db.collection('offer').find(criteria).toArray(function(err, result){
 			assert.equal(err,null);
 			callback(result);
@@ -463,6 +687,28 @@ function addproduct(db, body, callback){
       	result = true;
     }
     	callback(result);
+	});
+}
+function addwishlist(db, body, callback){
+	db.collection('wishlist').insertOne(body,function(err,result){
+	if (err) {
+      	console.log('insertOne Error: ' + JSON.stringify(err));
+      	result = err;
+    } else {
+      	console.log("Inserted _id = " + result.insertId);
+      	result = true;
+    }
+    	callback(result);
+	});
+}
+function delwishlist(db, criteria, callback){
+	db.collection('wishlist').remove(criteria,function(err,result) {
+	if(err){
+		result = err;
+	}else{
+		result = true
+	}
+	callback(result);
 	});
 }
 function addoffer(db, body, callback){
