@@ -176,6 +176,7 @@ app.post('/api/addwishlist', function(req,res){
 });
 
 app.post('/api/delwishlist', function(req,res){
+	var reresult = {};
 	console.log("delwishlist: "+JSON.stringify(req.body));
 	var criteria = {"_id":ObjectId(req.body._id)};
 	MongoClient.connect(mongourl,function(err,db) {
