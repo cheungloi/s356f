@@ -115,7 +115,7 @@ app.post('/api/updateac',function(req,res){
 	console.log("updateac: "+JSON.stringify(req.body));
 	if(req.body._id == null){
 		res.status(404);
-		res.end("no product id");
+		res.end("no ac id");
 		return;
 	}
 	var criteria1 = {"_id":ObjectId(req.body._id)};
@@ -124,6 +124,7 @@ app.post('/api/updateac',function(req,res){
 	criteria2['phone'] = req.body.phone;
 	criteria2['balance'] = req.body.balance;
 	criteria2['scode'] = req.body.scode;
+	criteria2['grade'] = req.body.grade;
 	if(req.body.irondata){
 		criteria2['irondata'] = req.body.irondata;
 		criteria2['irontype'] = req.body.irontype;
@@ -180,7 +181,7 @@ app.post('/api/delwishlist', function(req,res){
 	MongoClient.connect(mongourl,function(err,db) {
       console.log('connecting to wishlist');
       assert.equal(null,err);
-      updateproduct(db, criteria, function(result){
+      delwishlist(db, criteria, function(result){
     		db.close();
     		console.log("delwishlist: "+JSON.stringify(result));
     		if(result==true){
@@ -364,7 +365,7 @@ app.get('/api/listwishlist', function(req,res){
 		assert.equal(err, null);
 		console.log('connecting to wishlist');
 		listwishlist(db, criteria, function(wishlist){
-			if(ac != null){
+			if(wishlist != null){
 			db.close();
 			res.send(wishlist);
 			res.end();
@@ -467,8 +468,13 @@ app.get('/api/list/:criteria1/:criteria2', function(req,res){
 	var criteria = {};
 	if(req.params.criteria1 == "_id"){
 		criteria["_id"] = ObjectId(req.params.criteria2);
-	}else{
-	criteria[req.params.criteria1] = req.params.criteria2;
+	}else if (req.params.criteria1 == "price"){
+		criteria[req.params.criteria1] = parseInt(req.params.criteria2);
+	}else if (req.params.criteria1 == "size"){
+		criteria[req.params.criteria1] = parseFloat(req.params.criteria2);
+	}
+	else {
+		criteria[req.params.criteria1] = req.params.criteria2;
 	}
 	console.log(criteria);
 	MongoClient.connect(mongourl, function(err, db){
@@ -503,9 +509,10 @@ app.get('/api/listoffer/:criteria1/:criteria2/', function(req,res){
 	var criteria = {};
 	if(req.params.criteria1 == "offerid"){
 		criteria["_id"] = ObjectId(req.params.criteria2);
-	}else{
+	} else{
 		criteria[req.params.criteria1] = req.params.criteria2;
 	}
+	console.log(criteria);
 	MongoClient.connect(mongourl, function(err, db){
 		assert.equal(err, null);
 		console.log('connecting to offer');
@@ -628,20 +635,33 @@ function listproduct(db, criteria, callback){
 	}else{
 		console.log(criteria)
 		db.collection('product').find(criteria).toArray(function(err, result){
+			console.log(result);
 			assert.equal(err,null);
 			callback(result);
 	});
 	}
 }
 function listwishlist(db, criteria, callback){
+	var criterialookup = {
+		$lookup:{		
+			localField:"productID",
+			from:"product",
+			foreignField:"pid",
+			as:"product_doc"
+		}
+	};	
+	console.log(criterialookup);
 	if (!criteria){
-		db.collection('wishlist').find().toArray(function(err, result){
+		console.log("no criteria");
+		db.collection('wishlist').aggregate(criterialookup).toArray(function(err, result){
+			console.log(result);
 			assert.equal(err,null);
 			callback(result);
 	});
 	}else{
 		console.log(criteria)
-		db.collection('wishlist').find(criteria).toArray(function(err, result){
+		db.collection('wishlist').aggregate([{$match:criteria},criterialookup]).toArray(function(err, result){
+			console.log(result);
 			assert.equal(err,null);
 			callback(result);
 	});
